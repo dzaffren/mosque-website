@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🕌 Mosque Website & Management System
 
-## Getting Started
+A modern, high-performance landing page for mosques built with **Next.js 15**, **Tailwind CSS**, and **Sanity Headless CMS**. This project automates prayer scheduling and religious content management to keep the community informed.
 
-First, run the development server:
+## 🚀 Key Features
 
+* [cite_start]**Automated Prayer Schedules**: Fetches daily and monthly prayer timings directly from the Aladhan API via local API routes[cite: 1, 36, 102].
+* **Dynamic Friday Prayer Hub**: Automatically detects the upcoming Friday and pulls the specific Dhuhr time, Khatib, and Bilal assignments.
+* **Weekly Roster Management**: A custom Sanity CMS schema for managing Imam and Bilal rotations across all five daily prayers.
+* **Sermon Archive**: Integration for publishing weekly Khutbah details, including titles, summaries, and topics.
+* [cite_start]**Zakat Awareness**: Dedicated sections to highlight the importance of Zakaat and its impact on the local community[cite: 5, 25].
+
+## 🛠️ Tech Stack
+
+* **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+* **CMS**: [Sanity.io](https://www.sanity.io/)
+* **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+* **Components**: [Shadcn UI](https://ui.shadcn.com/)
+* **Icons**: [Lucide React](https://lucide.dev/)
+* **API**: [Aladhan Prayer Times API](https://aladhan.com/prayer-times-api)
+
+## 🏁 Getting Started
+
+### 1. Clone the repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone [https://github.com/dzaffren/mosque-website.git](https://github.com/dzaffren/mosque-website.git)
+cd mosque-website
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Environment Variables
+Create a .env.local file in the root directory and add your Sanity credentials:
+```bash
+NEXT_PUBLIC_SANITY_PROJECT_ID="your_project_id"
+NEXT_PUBLIC_SANITY_DATASET="production"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Run the development server
+```bash
+npm run dev
+```
+Open http://localhost:3000 to view the site.
 
-## Learn More
+## 📂 Project Structure
+- `app/friday-prayer/page.tsx`: Logic for automated Friday detection and sermon display.
 
-To learn more about Next.js, take a look at the following resources:
+- `app/prayer-times/page.tsx`: Monthly schedule table with Hijri date support.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `app/api/prayer-times/`: Local API routes for fetching and formatting external prayer data.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `sanity/schemaTypes/`: Custom schemas for Events, News, Weekly Rosters, and Sermons.
 
-## Deploy on Vercel
+## 📡 API Endpoints
+- `GET /api/prayer-times/monthly`: Returns formatted prayer times for the current month including the year for reliable parsing.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `GET /api/prayer-times/daily`: Returns today's specific prayer and iqamah times.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📝 License
+This project is open-source and intended for mosque community use.
