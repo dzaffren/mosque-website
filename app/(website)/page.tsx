@@ -13,25 +13,23 @@ import { PrayerTimesGrid } from "@/components/prayer-times-grid"
 
 // --- DATA FETCHING ---
 
+import { getDailyPrayerData } from '@/lib/prayer-service'
+import { getDailyHadith } from '@/lib/hadith-service' // 👈 Add this
+
 async function getPrayerTimes() {
   try {
-    const res = await fetch('http://localhost:3000/api/prayer-times/daily', {
-      next: { revalidate: 60 },
-    })
-    
-    if (!res.ok) throw new Error('Failed to fetch')
-    const data = await res.json()
-    
+    // ✅ Direct call: Works during Vercel Build
+    const data = await getDailyPrayerData() 
     return {
       date: data.gregorian,
       hijri: data.hijri,
       prayers: data.prayers
     }
   } catch (error) {
-    console.error("Prayer time fetch error:", error)
+    console.error("Prayer time logic error:", error)
     return {
       date: new Date().toLocaleDateString(),
-      hijri: "1445 AH",
+      hijri: "1446 AH",
       prayers: [
         { name: "Fajr", time: "05:00 AM" },
         { name: "Dhuhr", time: "12:30 PM" },
@@ -44,22 +42,9 @@ async function getPrayerTimes() {
 }
 
 async function gethadithOfDay() {
-  try {
-    const res = await fetch('http://localhost:3000/api/hadith', {
-      next: { revalidate: 3600 },
-    })
-    
-    if (!res.ok) throw new Error('Failed to fetch hadith')
-    return await res.json()
-    
-  } catch (error) {
-    console.error("hadith fetch error:", error)
-    return {
-      arabic: "إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا",
-      translation: "Verily, with hardship comes ease.",
-      reference: "Surah Ash-Sharh (94:6)",
-    }
-  }
+  // ✅ NO MORE FETCH to localhost:3000
+  // This calls the logic directly, which works during 'npm run build'
+  return await getDailyHadith();
 }
 
 // 👇 2. New Payload Fetching Logic
