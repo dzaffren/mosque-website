@@ -12,10 +12,8 @@ const formatTitle: FieldHook = async ({ data }) => {
   return 'Untitled Schedule'
 }
 
-// 👇 Updated Helper: Checks if day is Friday
 const createDayField = (day: string): Field => {
   const isFriday = day === 'friday'
-
   return {
     name: day,
     label: day.charAt(0).toUpperCase() + day.slice(1), 
@@ -37,7 +35,6 @@ const createDayField = (day: string): Field => {
           {
             name: 'dhuhr',
             type: 'group',
-            // 👇 Dynamic Label: Jumuah for Friday, Dhuhr for others
             label: isFriday ? 'Jumuah' : 'Dhuhr', 
             fields: [
               { name: 'imam', type: 'text', label: isFriday ? 'Khatib / Imam' : 'Imam' },
@@ -86,6 +83,17 @@ export const WeeklySchedule: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'startDate', 'updatedAt'],
+  },
+  // 👇 RBAC Logic Applied
+  access: {
+    // Dev and Super Admin can delete; Normal Admin can only create/update
+    delete: ({ req: { user } }) => 
+      ['dev', 'super-admin'].includes(user?.role),
+    create: ({ req: { user } }) => 
+      ['dev', 'super-admin', 'admin'].includes(user?.role),
+    update: ({ req: { user } }) => 
+      ['dev', 'super-admin', 'admin'].includes(user?.role),
+    read: () => true, // Public can view schedules
   },
   fields: [
     {

@@ -4,6 +4,18 @@ export const FridayPrayer: CollectionConfig = {
   slug: 'friday-prayer',
   admin: {
     useAsTitle: 'title',
+    defaultColumns: ['title', 'publishedAt'],
+  },
+  // 👇 RBAC Logic Applied
+  access: {
+    // Dev and Super Admin can delete; Normal Admin can only manage content
+    delete: ({ req: { user } }) => 
+      ['dev', 'super-admin'].includes(user?.role),
+    create: ({ req: { user } }) => 
+      ['dev', 'super-admin', 'admin'].includes(user?.role),
+    update: ({ req: { user } }) => 
+      ['dev', 'super-admin', 'admin'].includes(user?.role),
+    read: () => true, // Public access for the frontend
   },
   fields: [
     {
@@ -18,7 +30,9 @@ export const FridayPrayer: CollectionConfig = {
       type: 'date',
       required: true,
       admin: {
-        date: { pickerAppearance: 'dayOnly' },
+        date: { 
+          pickerAppearance: 'dayOnly' 
+        },
       },
     },
     {
@@ -28,6 +42,7 @@ export const FridayPrayer: CollectionConfig = {
     },
     {
       name: 'topics',
+      label: 'Key Topics/Points',
       type: 'array',
       fields: [
         {

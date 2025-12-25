@@ -4,7 +4,18 @@ export const Events: CollectionConfig = {
   slug: 'events',
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'date', 'eventTime', 'category'], // 👈 Add default columns for a cleaner list
+    defaultColumns: ['title', 'date', 'eventTime', 'category'],
+  },
+  // 👇 RBAC Logic Applied
+  access: {
+    // Dev and Super Admin can delete; Normal Admin can manage content
+    delete: ({ req: { user } }) => 
+      ['dev', 'super-admin'].includes(user?.role),
+    create: ({ req: { user } }) => 
+      ['dev', 'super-admin', 'admin'].includes(user?.role),
+    update: ({ req: { user } }) => 
+      ['dev', 'super-admin', 'admin'].includes(user?.role),
+    read: () => true, // Public access
   },
   fields: [
     {
@@ -31,10 +42,8 @@ export const Events: CollectionConfig = {
         date: { pickerAppearance: 'dayOnly' },
       },
     },
-    // ❌ DELETED the old 'time' text field from here
-
     {
-      name: 'eventTime', // ✅ Keeping only the new Date field
+      name: 'eventTime',
       label: 'Event Time',
       type: 'date',
       required: true,

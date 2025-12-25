@@ -10,6 +10,18 @@ export const News: CollectionConfig = {
   slug: 'news',
   admin: {
     useAsTitle: 'title',
+    defaultColumns: ['title', 'category', 'publishedAt'],
+  },
+  // 👇 RBAC Logic Applied
+  access: {
+    // Dev and Super Admin can delete; Normal Admin can only create/update
+    delete: ({ req: { user } }) => 
+      ['dev', 'super-admin'].includes(user?.role),
+    create: ({ req: { user } }) => 
+      ['dev', 'super-admin', 'admin'].includes(user?.role),
+    update: ({ req: { user } }) => 
+      ['dev', 'super-admin', 'admin'].includes(user?.role),
+    read: () => true, // Public can read news articles
   },
   fields: [
     {
@@ -58,7 +70,6 @@ export const News: CollectionConfig = {
       name: 'excerpt',
       type: 'textarea',
     },
-    // 👇 THIS IS THE CRITICAL FIELD
     {
       name: 'content',
       type: 'richText', 
