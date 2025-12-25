@@ -1,56 +1,61 @@
 import { Calendar, Clock, User, Mic2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { client } from '@/sanity/lib/client'
+import { getPayload } from 'payload'
+import config from '@payload-config'
 
 async function getFridayPrayerInfo() {
   try {
-    const sanityQuery = `{
-      "sermon": *[_type == "fridayPrayer"] | order(publishedAt desc)[0],
-      "roster": *[_type == "weeklySchedule"][0]
-    }`
-    
-    const [sanityData, prayerRes] = await Promise.all([
-      client.fetch(sanityQuery),
+    const payload = await getPayload({ config })
+
+    const [sermonRes, rosterRes, prayerRes] = await Promise.all([
+      // 1. Get latest Sermon
+      payload.find({
+        collection: 'friday-prayer',
+        sort: '-publishedAt',
+        limit: 1,
+      }),
+      // 2. Get Weekly Schedule (UPDATED)
+      payload.find({
+        collection: 'weekly-schedules', // ✅ Use Plural Slug
+        sort: '-startDate',             // ✅ Get the Latest Week
+        limit: 1, 
+      }),
+      // 3. Get accurate prayer times from API
       fetch('http://localhost:3000/api/prayer-times/monthly', { cache: 'no-store' })
     ])
 
+    const sermon = sermonRes.docs[0] || null
+    const roster = rosterRes.docs[0] || null
     const prayerData = await prayerRes.json()
     
-    // 1. Get today's date at midnight for accurate comparison
+    // --- DATE LOGIC ---
     const now = new Date()
     const todayAtMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
-    // 2. Find the upcoming Friday from the Prayer API
     const upcomingFriday = prayerData.days?.find((day: any) => {
       const dayDate = new Date(day.date) 
       return day.weekday === 'Friday' && dayDate >= todayAtMidnight
     })
 
-    // 3. Target the Dhuhr slot in the Weekly Roster
-    const jumuahRoster = sanityData.roster?.friday?.dhuhr || {}
+    const jumuahRoster = roster?.friday?.dhuhr || {}
 
-    // 4. Return with hardcoded fallbacks for the Sermon fields
     return {
-      // Sermon Fallbacks
-      title: sanityData.sermon?.title || "Sermon Title Pending",
-      summary: sanityData.sermon?.summary || "Details for this week's khutbah will be updated shortly. Please check back soon.",
-      topics: sanityData.sermon?.topics || ["Community", "Prayer"],
+      title: sermon?.title || "Sermon Title Pending",
+      summary: sermon?.summary || "Details for this week's khutbah will be updated shortly.",
+      topics: sermon?.topics?.map((t: any) => t.topic) || ["Community", "Prayer"],
       
-      // Schedule Fallbacks
-      // Priority: 1. API Date -> 2. Sermon Date -> 3. Today (calculated)
-      date: upcomingFriday?.date || sanityData.sermon?.publishedAt || todayAtMidnight.toISOString(),
+      date: upcomingFriday?.date || sermon?.publishedAt || todayAtMidnight.toISOString(),
       
-      // Priority: 1. API Time -> 2. Roster Time -> 3. Default 1:15 PM
-      time: upcomingFriday?.timings?.Dhuhr || jumuahRoster.time || "1:15 PM",
+      // ✅ UPDATED: Removed 'jumuahRoster.iqamah' since we deleted that field.
+      // It now relies on the API time or defaults to 1:15 PM.
+      time: upcomingFriday?.timings?.Dhuhr || "1:15 PM",      
       
-      // Personnel Fallbacks
       imam: jumuahRoster.imam || "To be announced",
       bilal: jumuahRoster.bilal || "To be announced"
     }
   } catch (error) {
     console.error("Error fetching Friday info:", error)
-    // Absolute safety return to prevent the page from crashing
     return {
       title: "Schedule Unavailable",
       summary: "We are currently experiencing technical difficulties loading the schedule.",
@@ -68,7 +73,7 @@ export default async function FridayPrayerPage() {
 
   if (!fridayInfo) return <div>Error loading schedule.</div>
 
-  // Clean the date string for formatting (e.g., "26 December 2025")
+  // Clean the date string for formatting
   const formattedDate = new Date(fridayInfo.date).toLocaleDateString("en-US", { 
     weekday: "long", 
     year: "numeric", 
@@ -195,4 +200,3 @@ export default async function FridayPrayerPage() {
     </div>
   )
 }
-

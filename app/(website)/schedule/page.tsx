@@ -1,11 +1,24 @@
-import { client } from '@/sanity/lib/client'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+// 👇 1. Payload Imports
+import { getPayload } from 'payload'
+import config from '@payload-config'
+import { WeeklySchedule } from '@/payload-types' // Import generated type
 
+// 2. Fetch from Payload
 async function getSchedule() {
-  const query = `*[_type == "weeklySchedule"][0]`
-  return await client.fetch(query)
+  const payload = await getPayload({ config })
+
+  // Fetch the most recent schedule (assuming only 1 exists or taking the first)
+const result = await payload.find({
+  collection: 'weekly-schedules', 
+  sort: '-startDate', // 👈 Don't forget this line!
+  limit: 1,
+})
+
+  // Return the first doc or null
+  return (result.docs[0] as unknown as WeeklySchedule) || null
 }
 
 export default async function SchedulePage() {
@@ -15,7 +28,7 @@ export default async function SchedulePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
-      <div className="container mx-auto px-4 max-w-6xl"> {/* Increased width for more columns */}
+      <div className="container mx-auto px-4 max-w-6xl">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">Weekly Roster</h1>
           <p className="text-slate-600">Full Imam and Bilal assignments for each prayer.</p>
@@ -41,45 +54,48 @@ export default async function SchedulePage() {
                     ))}
                   </TableRow>
                 </TableHeader>
-<TableBody>
-  {days.map((day) => {
-    const dayData = schedule[day.toLowerCase()]
-    const isFriday = day === 'Friday'
-    
-    return (
-      <TableRow key={day} className={`hover:bg-slate-50/50 ${isFriday ? "bg-emerald-50/30" : ""}`}>
-        <TableCell className="font-bold text-slate-900">
-          {day}
-        </TableCell>
-        
-        {prayers.map((prayer) => {
-          // Logic: If it's Friday and the prayer is Dhuhr, we label it Jumuah
-          const isJumuahSlot = isFriday && prayer === 'dhuhr'
-          
-          return (
-            <TableCell key={prayer} className="border-l text-center py-4">
-              <div className="flex flex-col text-[11px] leading-tight">
-                <span className="text-emerald-700 font-bold mb-1 uppercase tracking-tighter">
-                  {isJumuahSlot ? "Khatib / Imam" : "Imam"}
-                </span>
-                <span className="text-slate-900 font-medium mb-2">
-                  {dayData?.[prayer]?.imam || '-'}
-                </span>
-                
-                <span className="text-blue-700 font-bold mb-1 uppercase tracking-tighter border-t pt-1">
-                  Bilal
-                </span>
-                <span className="text-slate-900 font-medium">
-                  {dayData?.[prayer]?.bilal || '-'}
-                </span>
-              </div>
-            </TableCell>
-          )
-        })}
-      </TableRow>
-    )
-  })}
-</TableBody>
+                <TableBody>
+                  {days.map((day) => {
+                    // Type-safe way to access the dynamic day property
+                    const dayKey = day.toLowerCase() as keyof WeeklySchedule
+                    const dayData: any = schedule[dayKey] // Using 'any' here simplifies the nested structure access
+                    
+                    const isFriday = day === 'Friday'
+                    
+                    return (
+                      <TableRow key={day} className={`hover:bg-slate-50/50 ${isFriday ? "bg-emerald-50/30" : ""}`}>
+                        <TableCell className="font-bold text-slate-900">
+                          {day}
+                        </TableCell>
+                        
+                        {prayers.map((prayer) => {
+                          // Logic: If it's Friday and the prayer is Dhuhr, we label it Jumuah
+                          const isJumuahSlot = isFriday && prayer === 'dhuhr'
+                          
+                          return (
+                            <TableCell key={prayer} className="border-l text-center py-4">
+                              <div className="flex flex-col text-[11px] leading-tight">
+                                <span className="text-emerald-700 font-bold mb-1 uppercase tracking-tighter">
+                                  {isJumuahSlot ? "Khatib / Imam" : "Imam"}
+                                </span>
+                                <span className="text-slate-900 font-medium mb-2">
+                                  {dayData?.[prayer]?.imam || '-'}
+                                </span>
+                                
+                                <span className="text-blue-700 font-bold mb-1 uppercase tracking-tighter border-t pt-1">
+                                  Bilal
+                                </span>
+                                <span className="text-slate-900 font-medium">
+                                  {dayData?.[prayer]?.bilal || '-'}
+                                </span>
+                              </div>
+                            </TableCell>
+                          )
+                        })}
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
               </Table>
             )}
           </CardContent>

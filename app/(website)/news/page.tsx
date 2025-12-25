@@ -1,113 +1,109 @@
-import { client } from '@/sanity/lib/client'
-import { urlFor } from '@/sanity/lib/image'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FileText } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowRight, Calendar, FileText, User } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link" // <--- Import Link
+import Link from "next/link"
+// 👇 1. Payload Imports
+import { getPayload } from 'payload'
+import config from '@payload-config'
 
-// 1. Define the shape of the data
-interface NewsArticle {
-  _id: string
-  title: string
-  slug: { current: string } // <--- Added slug
-  category: string
-  author: string
-  publishedAt: string
-  excerpt: string
-  image: any
-}
-
-// 2. Fetch data (Added 'slug' to query)
+// 2. Fetch News from Payload
 async function getNews() {
-  const query = `
-    *[_type == "news"] | order(publishedAt desc) {
-      _id,
-      title,
-      slug,
-      category,
-      author,
-      publishedAt,
-      excerpt,
-      image
-    }
-  `
-  return await client.fetch(query)
+  const payload = await getPayload({ config })
+
+  const result = await payload.find({
+    collection: 'news',
+    sort: '-publishedAt', // Newest first
+  })
+
+  return result.docs
 }
 
 export default async function NewsPage() {
-  const newsArticles: NewsArticle[] = await getNews()
+  const news = await getNews()
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="container mx-auto px-4">
-        <div className="mb-8 text-center">
+        {/* Header */}
+        <div className="mb-10 text-center">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">Community News</h1>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            Updates, announcements, and stories from our mosque community.
+            Stay updated with the latest announcements, articles, and updates from our mosque.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {newsArticles.map((article) => (
-            // 3. Wrap everything in a Link using the slug
-<Link 
-              href={article.slug?.current ? `/news/${article.slug.current}` : '#'} 
-              key={article._id} 
-              className="block h-full group"
-            >
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
+        {/* News Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {news.length > 0 ? (
+            news.map((item: any) => (
+              <Card key={item.id} className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-shadow border-slate-200">
                 
-                {/* Image Section with Fallback */}
-                <div className="relative h-48 w-full bg-slate-200">
-                  {article.image ? (
+                {/* Image Section */}
+                <div className="relative h-56 w-full bg-slate-100">
+                  {item.image && typeof item.image !== 'string' && item.image.url ? (
                     <Image
-                      src={urlFor(article.image).url()}
-                      alt={article.title}
+                      src={item.image.url}
+                      alt={item.image.alt || item.title}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="object-cover"
                     />
                   ) : (
+                    // Fallback Icon
                     <div className="flex h-full w-full items-center justify-center bg-slate-100">
-                      <FileText className="h-12 w-12 text-slate-300" />
+                      <FileText className="h-16 w-16 text-slate-300" />
                     </div>
                   )}
                 </div>
 
-                <CardHeader>
-                  <div className="flex justify-between items-start gap-2 mb-2">
-                    <Badge variant="outline" className="capitalize">
-                      {article.category}
+                {/* Content Section */}
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-center mb-3">
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200">
+                      {item.category || 'General'}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(article.publishedAt).toLocaleDateString()}
+                    <span className="text-xs text-slate-500 flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {new Date(item.publishedAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <CardTitle className="line-clamp-2 group-hover:text-emerald-700 transition-colors">
-                    {article.title}
+                  <CardTitle className="text-xl font-bold text-slate-900 leading-tight line-clamp-2 hover:text-emerald-700 transition-colors">
+                    <Link href={`/news/${item.slug || ''}`}>
+                      {item.title}
+                    </Link>
                   </CardTitle>
                 </CardHeader>
-                
-                <CardContent className="flex-1 flex flex-col">
-                  <p className="text-muted-foreground text-sm line-clamp-3 mb-4">
-                    {article.excerpt}
+
+                <CardContent className="flex-grow flex flex-col pt-0">
+                  {/* Author Line */}
+                  <div className="mb-4 text-xs text-slate-500 flex items-center">
+                    <User className="h-3 w-3 mr-1" />
+                    <span>{item.author || 'Admin'}</span>
+                  </div>
+
+                  {/* Excerpt */}
+                  <p className="text-slate-600 text-sm line-clamp-3 mb-6 leading-relaxed flex-grow">
+                    {item.excerpt || "Click below to read the full details of this announcement."}
                   </p>
-                  <div className="mt-auto flex items-center justify-between w-full">
-                    <span className="text-xs text-slate-500 font-medium">
-                      By {article.author}
-                    </span>
-                    <span className="text-xs font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Read Article →
-                    </span>
+
+                  {/* Read More Button */}
+                  <div className="mt-auto pt-4 border-t border-slate-100">
+                    <Link href={`/news/${item.slug || ''}`}>
+                      <Button variant="ghost" className="p-0 text-emerald-700 hover:text-emerald-800 hover:bg-transparent font-semibold h-auto flex items-center gap-1 group">
+                        Read Full Article 
+                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))}
-
-          {newsArticles.length === 0 && (
-            <div className="col-span-full text-center py-12 text-muted-foreground">
-              No news articles found.
+            ))
+          ) : (
+            <div className="col-span-full text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
+              <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-900">No News Yet</h3>
+              <p className="text-slate-500">Check back later for community updates.</p>
             </div>
           )}
         </div>

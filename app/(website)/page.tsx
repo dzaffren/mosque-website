@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DonationModal } from "@/components/donation-modal"
-import { client } from "@/sanity/lib/client"
-import { urlFor } from "@/sanity/lib/image"
+// 👇 1. Payload Imports replace Sanity Imports
+import { getPayload } from 'payload'
+import config from '@payload-config'
 import { NextPrayerCountdown } from "@/components/next-prayer-countdown"
 import { PrayerTimesGrid } from "@/components/prayer-times-grid"
 
-// --- DATA FETCHING (Kept the same) ---
+// --- DATA FETCHING ---
 
 async function getPrayerTimes() {
   try {
@@ -44,7 +45,6 @@ async function getPrayerTimes() {
 
 async function gethadithOfDay() {
   try {
-    // UPDATED: Path is now just /api/hadith
     const res = await fetch('http://localhost:3000/api/hadith', {
       next: { revalidate: 3600 },
     })
@@ -62,38 +62,48 @@ async function gethadithOfDay() {
   }
 }
 
-async function getUpcomingEvents() {
-  const query = `*[_type == "event"] | order(date asc)[0...3] {
-    _id, title, date, time, description, image, category
-  }`
-  return await client.fetch(query)
-}
+// 👇 2. New Payload Fetching Logic
+async function getPayloadData() {
+  const payload = await getPayload({ config })
 
-async function getLatestNews() {
-  const query = `*[_type == "news"] | order(publishedAt desc)[0...3] {
-    _id, 
-    title, 
-    slug, // <--- Add this
-    publishedAt, 
-    excerpt, 
-    category, 
-    image
-  }`
-  return await client.fetch(query)
+  const [eventsData, newsData] = await Promise.all([
+    // Fetch Events
+    payload.find({
+      collection: 'events',
+      sort: 'date', // Ascending (soonest first)
+      limit: 3,
+      where: {
+        date: { greater_than_equal: new Date().toISOString() } // Optional: Hide past events
+      }
+    }),
+    // Fetch News
+    payload.find({
+      collection: 'news',
+      sort: '-publishedAt', // Descending (newest first)
+      limit: 3,
+    })
+  ])
+
+  return {
+    upcomingEvents: eventsData.docs,
+    latestNews: newsData.docs
+  }
 }
 
 export default async function Home() {
-  const [prayerTimes, hadithOfDay, upcomingEvents, latestNews] = await Promise.all([
+  // Execute fetches
+  const [prayerTimes, hadithOfDay, payloadData] = await Promise.all([
     getPrayerTimes(),
     gethadithOfDay(),
-    getUpcomingEvents(),
-    getLatestNews()
+    getPayloadData()
   ])
+
+  const { upcomingEvents, latestNews } = payloadData
   
   return (
     <div className="min-h-screen">
       
-      {/* Hero Section: Reduced py-20 to py-12 to reduce height */}
+      {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-emerald-900 to-emerald-800 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-2">
@@ -108,9 +118,7 @@ export default async function Home() {
       {/* PRAYER TIMES SECTION */}
       <section className="py-8 bg-background">
         <div className="container mx-auto px-4">
-          {/* Main Card: Reduced max-w-5xl to max-w-4xl for a tighter look */}
           <Card className="shadow-xl max-w-4xl mx-auto bg-white rounded-[2rem] border-none overflow-hidden ring-1 ring-slate-100">
-            {/* Header: Reduced top padding pt-10 to pt-8 */}
             <CardHeader className="text-center pb-2 pt-8">
               <div className="mb-6">
                 <NextPrayerCountdown 
@@ -120,7 +128,6 @@ export default async function Home() {
 
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Clock className="h-5 w-5 text-emerald-600" />
-                {/* Reduced font size text-2xl -> text-xl */}
                 <CardTitle className="text-xl font-bold text-slate-800">Today's Prayer Times</CardTitle>
               </div>
               
@@ -132,11 +139,8 @@ export default async function Home() {
               </div>
             </CardHeader>
 
-            {/* Content: Reduced horizontal padding */}
             <CardContent className="px-4 md:px-8 pb-8">
-              
               <PrayerTimesGrid prayers={prayerTimes.prayers} />
-
               <div className="mt-8 text-center">
                 <Link href="/prayer-times">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-6 py-5 text-sm font-semibold shadow-md hover:shadow-xl transition-all">
@@ -168,7 +172,7 @@ export default async function Home() {
         </div>
       </section>
       
-{/* Events Section */}
+      {/* Events Section */}
       <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-6">
@@ -182,22 +186,22 @@ export default async function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {upcomingEvents.length > 0 ? (
               upcomingEvents.map((event: any) => (
-                <Link href={`/events/${event.slug?.current || '#'}`} key={event._id} className="block h-full group">
+                // ⚠️ NOTE: Changed link to use ID because our Events schema doesn't have a slug yet
+                <Link href={`/events/${event.id}`} key={event.id} className="block h-full group">
                   <Card className="w-full h-full shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col rounded-2xl">
                     
                     {/* IMAGE AREA */}
                     <div className="relative h-48 w-full bg-slate-100 overflow-hidden">
-                      {event.image ? (
+                      {event.image && typeof event.image !== 'string' && event.image.url ? (
                         <Image
-                          src={urlFor(event.image).url()}
-                          alt={event.title}
+                          // 👇 Payload Image URL access
+                          src={event.image.url}
+                          alt={event.image.alt || event.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
-                        // NO IMAGE FALLBACK - Clean (No Dots)
                         <div className="w-full h-full relative flex items-center justify-center bg-emerald-50/50 group-hover:bg-emerald-50/80 transition-colors duration-500">
-                          {/* Just the Icon centered on soft green background */}
                           <div className="flex flex-col items-center justify-center text-emerald-200 group-hover:text-emerald-300 transition-colors">
                             <Calendar className="h-12 w-12" />
                           </div>
@@ -205,7 +209,6 @@ export default async function Home() {
                       )}
                     </div>
 
-                    {/* CONTENT AREA */}
                     <CardHeader className="p-5 pb-2">
                       <div className="flex justify-between items-start mb-2">
                         <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-100 text-[10px] uppercase font-bold px-2 py-0.5">
@@ -249,7 +252,7 @@ export default async function Home() {
         </div>
       </section>
       
-{/* Latest News Section */}
+      {/* Latest News Section */}
       <section className="py-12 bg-slate-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
@@ -263,22 +266,21 @@ export default async function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {latestNews.length > 0 ? (
               latestNews.map((newsItem: any) => (
-                <div key={newsItem._id} className="h-full">
+                <div key={newsItem.id} className="h-full">
                   <Card className="w-full h-full shadow-sm hover:shadow-md transition-shadow flex flex-col rounded-2xl bg-white border border-slate-100 overflow-hidden">
                     
                     {/* IMAGE AREA */}
                     <div className="relative h-48 w-full bg-slate-100 overflow-hidden">
-                      {newsItem.image ? (
+                      {newsItem.image && typeof newsItem.image !== 'string' && newsItem.image.url ? (
                         <Image
-                          src={urlFor(newsItem.image).url()}
-                          alt={newsItem.title}
+                          // 👇 Payload Image URL access
+                          src={newsItem.image.url}
+                          alt={newsItem.image.alt || newsItem.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
-                        // NO IMAGE FALLBACK - Clean (No Dots)
                         <div className="w-full h-full relative flex items-center justify-center bg-emerald-50/50">
-                          {/* Just the Icon centered */}
                           <div className="flex flex-col items-center justify-center text-emerald-200">
                             <FileText className="h-12 w-12" />
                           </div>
@@ -286,7 +288,6 @@ export default async function Home() {
                       )}
                     </div>
                     
-                    {/* Content */}
                     <CardHeader className="p-5 pb-2">
                       <div className="flex justify-between items-center mb-3">
                         <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-[10px] font-bold px-2 py-0.5">
@@ -308,12 +309,13 @@ export default async function Home() {
                       </p>
                       
                       <div className="mt-auto pt-4 border-t border-slate-50">
-<Link 
-          href={`/news/${newsItem.slug?.current || ''}`} 
-          className="text-emerald-700 text-xs font-bold inline-flex items-center hover:underline group"
-        >
-          Read more <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
-        </Link>
+                        <Link 
+                          // 👇 Payload uses flat slugs, no .current
+                          href={`/news/${newsItem.slug || ''}`} 
+                          className="text-emerald-700 text-xs font-bold inline-flex items-center hover:underline group"
+                        >
+                          Read more <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                        </Link>
                       </div>
                     </CardContent>
                   </Card>
@@ -326,7 +328,6 @@ export default async function Home() {
             )}
           </div>
 
-          {/* ADDED: View All News Button */}
           <div className="mt-10 text-center">
             <Link href="/news">
               <Button variant="outline" className="border-emerald-600 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-full px-8">
@@ -342,7 +343,6 @@ export default async function Home() {
       <section className="py-10 bg-emerald-900 text-white">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-4 max-w-4xl mx-auto items-stretch">
-            {/* Quick action cards code kept standard, just tighter gap */}
             <Card className="bg-emerald-800 border-emerald-700 text-white text-center h-full flex flex-col rounded-xl">
               <CardContent className="pt-6 flex flex-col flex-grow">
                 <Heart className="h-10 w-10 mx-auto mb-3 text-emerald-200" />
