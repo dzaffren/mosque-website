@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./mosque.db:/app/mosque.db
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - .env
+    # For development, use: npm run dev instead of production build
+    command: npm run dev
