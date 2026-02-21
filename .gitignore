@@ -48,3 +48,10 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# SQLite databases (local development)
+*.db
+*.db-shm
+*.db-wal
+mosque.db
+
