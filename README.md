@@ -53,35 +53,73 @@ docker-compose up
 
 This runs the app with SQLite. Database file persists in `mosque.db`.
 
-## 📦 Production Setup (Supabase)
+## 📦 Production Setup (Supabase + Vercel)
 
-1. **Create Supabase Project**
-   - Sign up at [supabase.com](https://supabase.com)
-   - Create new PostgreSQL database
-   - Copy connection string
+### 1. Create Supabase Project
 
-2. **Environment Variables**
+1. Sign up at [supabase.com](https://supabase.com)
+2. Create new PostgreSQL database
+3. Copy the connection string from **Project Settings** → **Database** → **Connection Strings**
+4. Format: `postgresql://postgres:PASSWORD@db.PROJECT_ID.supabase.co:5432/postgres?schema=public`
+
+### 2. Deploy to Vercel
+
+1. Push code to GitHub:
+   ```bash
+   git push
+   ```
+
+2. Import project in [Vercel](https://vercel.com) (or redeploy if already imported)
+
+3. Add environment variables in **Project Settings** → **Environment Variables**:
+   ```
+   DATABASE_URL = postgresql://postgres:PASSWORD@db.PROJECT_ID.supabase.co:5432/postgres?schema=public
+   PAYLOAD_SECRET = <generate-a-random-secret>
+   NEXT_PUBLIC_SITE_URL = https://your-domain.com
+   SMTP_HOST = <your-smtp-provider>
+   SMTP_PORT = 587
+   SMTP_USER = <your-email>
+   SMTP_PASS = <your-password>
+   CONTACT_EMAIL_TO = admin@your-mosque.com
+   TOYYIBPAY_SECRET_KEY = <your-key>
+   TOYYIBPAY_CATEGORY_CODE = <your-code>
+   CRON_SECRET = <generate-random>
+   ```
+
+4. Vercel automatically deploys when environment variables are set
+
+### 3. Database Auto-Initialization
+
+- First deployment takes 2-3 minutes
+- Payload CMS automatically creates all tables in PostgreSQL
+- No manual migration scripts needed
+
+### 4. Local Development (Still Uses SQLite)
+
+Local development continues to use SQLite:
 ```bash
-DATABASE_URL=postgresql://user:password@db.supabase.co:5432/postgres
-PAYLOAD_SECRET=<generate-a-random-secret>
-NEXT_PUBLIC_SITE_URL=https://your-domain.com
-SMTP_HOST=<your-smtp-provider>
-SMTP_PORT=587
-SMTP_USER=<your-email>
-SMTP_PASS=<your-password>
-CONTACT_EMAIL_TO=admin@your-mosque.com
-TOYYIBPAY_SECRET_KEY=<your-key>
-TOYYIBPAY_CATEGORY_CODE=<your-code>
-CRON_SECRET=<generate-random>
+npm run dev
 ```
 
-3. **Build & Deploy**
+The database adapter automatically selects SQLite for `NODE_ENV !== 'production'`.
+
+### How It Works
+
+The `src/payload.config.ts` contains conditional adapter logic:
+- **Development** (`NODE_ENV !== 'production'`): SQLite (`file:./mosque.db`)
+- **Production** (`NODE_ENV === 'production'`): PostgreSQL via `DATABASE_URL`
+
+Vercel automatically sets `NODE_ENV=production`, so the switch is automatic!
+
+### Manual Deployment Alternative
+
+If not using Vercel, you can deploy to any Node.js platform:
 ```bash
 npm run build
 npm start
 ```
 
-Or deploy with Docker to any cloud platform (AWS, Google Cloud, Azure, Railway, etc.).
+Ensure `DATABASE_URL` environment variable is set to your Supabase PostgreSQL connection string.
 
 ## 🔧 Configuration
 
