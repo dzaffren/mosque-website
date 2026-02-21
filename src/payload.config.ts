@@ -1,4 +1,5 @@
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
+import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -22,6 +23,19 @@ import { MosqueSettings } from './globals/MosqueSettings'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+// Select database adapter based on environment
+const dbAdapter = process.env.NODE_ENV === 'production'
+  ? postgresAdapter({
+      pool: {
+        connectionString: process.env.DATABASE_URL || '',
+      },
+    })
+  : sqliteAdapter({
+      client: {
+        url: process.env.DATABASE_URL || 'file:./mosque.db',
+      },
+    })
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -36,11 +50,7 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  db: sqliteAdapter({
-    client: {
-      url: process.env.DATABASE_URL || '',
-    },
-  }),
+  db: dbAdapter,
   sharp,
   plugins: [],
 })
