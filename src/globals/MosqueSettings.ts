@@ -27,6 +27,21 @@ export const MosqueSettings: GlobalConfig = {
       name: 'logo',
       type: 'upload',
       relationTo: 'media',
+      admin: {
+        description: 'Upload a square image (recommended: 200x200px or larger). PNG or SVG format recommended for best quality. Maximum file size: 500KB.',
+      },
+    },
+    {
+      name: 'logoShape',
+      type: 'select',
+      defaultValue: 'square',
+      options: [
+        { label: 'Square', value: 'square' },
+        { label: 'Circle', value: 'circle' },
+      ],
+      admin: {
+        description: 'Choose how the logo should be displayed in the navigation bar',
+      },
     },
     {
       name: 'address',

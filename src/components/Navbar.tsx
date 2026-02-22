@@ -21,9 +21,10 @@ const navLinks = [
 interface NavbarProps {
   mosqueName?: string
   logo?: Media | null
+  logoShape?: 'square' | 'circle'
 }
 
-export function Navbar({ mosqueName = 'Masjid Al-Iman', logo }: NavbarProps) {
+export function Navbar({ mosqueName = 'Masjid Al-Iman', logo, logoShape = 'square' }: NavbarProps) {
   const t = useTranslations('nav')
   const pathname = usePathname()
   const params = useParams()
@@ -40,7 +41,7 @@ export function Navbar({ mosqueName = 'Masjid Al-Iman', logo }: NavbarProps) {
           {/* Logo / Mosque name */}
           <Link href="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight">
             {logo?.url ? (
-              <div className="relative h-10 w-10 flex-shrink-0">
+              <div className={`relative h-10 w-10 flex-shrink-0 overflow-hidden ${logoShape === 'circle' ? 'rounded-full' : ''}`}>
                 <Image
                   src={logo.url}
                   alt={mosqueName}

@@ -57,11 +57,12 @@ export default async function LocaleLayout({
   const whatsappGroupUrl = (settings.whatsappGroupUrl as string | undefined) || ''
   const mosqueName = (settings.name as string | undefined) || 'Masjid Al-Iman'
   const logo = settings.logo && typeof settings.logo === 'object' ? settings.logo : null
+  const logoShape = (settings.logoShape as 'square' | 'circle' | undefined) || 'square'
 
   return (
     <NextIntlClientProvider messages={messages}>
       <SetLocale locale={locale} />
-      <Navbar mosqueName={mosqueName} logo={logo} />
+      <Navbar mosqueName={mosqueName} logo={logo} logoShape={logoShape} />
       <main className="min-h-[calc(100vh-160px)]">{children}</main>
       <Footer whatsappGroupUrl={whatsappGroupUrl} />
     </NextIntlClientProvider>

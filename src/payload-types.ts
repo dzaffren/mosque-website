@@ -170,6 +170,10 @@ export interface User {
 export interface Media {
   id: number;
   alt: string;
+  /**
+   * Categorize this image for better organization
+   */
+  purpose?: ('logo' | 'gallery' | 'event' | 'staff' | 'other') | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -181,6 +185,24 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -537,6 +559,7 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  purpose?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -548,6 +571,30 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        card?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -762,7 +809,14 @@ export interface MosqueSetting {
   whatsappGroupUrl?: string | null;
   name: string;
   tagline?: string | null;
+  /**
+   * Upload a square image (recommended: 200x200px or larger). PNG or SVG format recommended for best quality. Maximum file size: 500KB.
+   */
   logo?: (number | null) | Media;
+  /**
+   * Choose how the logo should be displayed in the navigation bar
+   */
+  logoShape?: ('square' | 'circle') | null;
   address?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -873,6 +927,7 @@ export interface MosqueSettingsSelect<T extends boolean = true> {
   name?: T;
   tagline?: T;
   logo?: T;
+  logoShape?: T;
   address?: T;
   phone?: T;
   email?: T;
