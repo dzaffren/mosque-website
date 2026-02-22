@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useParams } from 'next/navigation'
 import { useState } from 'react'
+import Image from 'next/image'
+import type { Media } from '@/payload-types'
 
 const navLinks = [
   { href: '/', key: 'home' },
@@ -16,7 +18,12 @@ const navLinks = [
   { href: '/contact', key: 'contact' },
 ] as const
 
-export function Navbar() {
+interface NavbarProps {
+  mosqueName?: string
+  logo?: Media | null
+}
+
+export function Navbar({ mosqueName = 'Masjid Al-Iman', logo }: NavbarProps) {
   const t = useTranslations('nav')
   const pathname = usePathname()
   const params = useParams()
@@ -32,8 +39,20 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo / Mosque name */}
           <Link href="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight">
-            <MosqueIcon />
-            <span className="hidden sm:inline">Masjid Al-Iman</span>
+            {logo?.url ? (
+              <div className="relative h-10 w-10 flex-shrink-0">
+                <Image
+                  src={logo.url}
+                  alt={mosqueName}
+                  fill
+                  className="object-contain"
+                  sizes="40px"
+                />
+              </div>
+            ) : (
+              <MosqueIcon />
+            )}
+            <span className="hidden sm:inline">{mosqueName}</span>
           </Link>
 
           {/* Desktop nav */}

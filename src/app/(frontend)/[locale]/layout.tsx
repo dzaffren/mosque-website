@@ -53,13 +53,15 @@ export default async function LocaleLayout({
   const messages = await getMessages()
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
-  const settings = await payload.findGlobal({ slug: 'mosque-settings' })
+  const settings = await payload.findGlobal({ slug: 'mosque-settings', depth: 1 })
   const whatsappGroupUrl = (settings.whatsappGroupUrl as string | undefined) || ''
+  const mosqueName = (settings.name as string | undefined) || 'Masjid Al-Iman'
+  const logo = settings.logo && typeof settings.logo === 'object' ? settings.logo : null
 
   return (
     <NextIntlClientProvider messages={messages}>
       <SetLocale locale={locale} />
-      <Navbar />
+      <Navbar mosqueName={mosqueName} logo={logo} />
       <main className="min-h-[calc(100vh-160px)]">{children}</main>
       <Footer whatsappGroupUrl={whatsappGroupUrl} />
     </NextIntlClientProvider>
