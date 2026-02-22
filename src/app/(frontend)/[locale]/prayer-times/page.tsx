@@ -9,7 +9,7 @@ export default async function PrayerTimesPage() {
   const payload = await getPayload({ config: payloadConfig })
 
   // Fetch mosque settings for coordinates
-  const settings = await payload.findGlobal({ slug: 'mosque-settings' })
+  const settings = await payload.findGlobal({ slug: 'mosque-settings', depth: 1 })
   const lat = settings.mapCoordinates?.lat ?? 3.139
   const lng = settings.mapCoordinates?.lng ?? 101.6869
 

@@ -10,11 +10,11 @@ export default async function DonationPage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
-  const settings = await payload.findGlobal({ slug: 'mosque-settings' })
+  const settings = await payload.findGlobal({ slug: 'mosque-settings', depth: 1 })
   const donation = settings.donation as any
 
   const qrImageUrl = donation?.qrImage?.url
-    ? `${process.env.NEXT_PUBLIC_SITE_URL || ''}${donation.qrImage.url}`
+    ? (donation.qrImage.url.startsWith('http') ? donation.qrImage.url : `${process.env.NEXT_PUBLIC_SITE_URL || ''}${donation.qrImage.url}`)
     : null
 
   return (

@@ -8,7 +8,7 @@ export default async function ContactPage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
-  const settings = await payload.findGlobal({ slug: 'mosque-settings' })
+  const settings = await payload.findGlobal({ slug: 'mosque-settings', depth: 1 })
   const whatsappUrl = settings.whatsappGroupUrl as string | undefined
 
   return (

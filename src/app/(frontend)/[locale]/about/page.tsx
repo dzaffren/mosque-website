@@ -8,7 +8,7 @@ export default async function AboutPage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
-  const settings = await payload.findGlobal({ slug: 'mosque-settings' })
+  const settings = await payload.findGlobal({ slug: 'mosque-settings', depth: 1 })
   const staffResult = await payload.find({
     collection: 'staff',
     sort: 'order',

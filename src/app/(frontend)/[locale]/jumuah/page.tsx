@@ -22,7 +22,7 @@ export default async function JumuahPage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
-  const settings = await payload.findGlobal({ slug: 'mosque-settings' })
+  const settings = await payload.findGlobal({ slug: 'mosque-settings', depth: 1 })
   const jumuah = settings.jumuah
   const sermonPortal = (settings as any).sermonPortal as { name?: string; url?: string } | undefined
   const coords = settings.mapCoordinates as { latitude?: number; longitude?: number } | undefined
