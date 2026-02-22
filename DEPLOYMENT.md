@@ -26,18 +26,20 @@ Database persists in `mosque.db` (mounted as volume).
 
 1. Sign up at [supabase.com](https://supabase.com)
 2. Create a new project
-3. Go to **Settings** → **Database** → copy JDBC URL
-4. Convert to connection string:
+3. Go to **Settings** → **Database** → **Connection string**
+4. Select **Transaction** mode (required for serverless/Vercel)
+5. Copy the connection string:
    ```
-   postgresql://postgres:password@db.supabase.co:5432/postgres
+   postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
    ```
+   ⚠️ **Important:** Use port `6543` (pooler), NOT `5432` (direct). Direct connections will timeout on Vercel.
 
 ### 2. Environment Variables
 
 Create `.env.production`:
 ```bash
-# Database
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.supabase.co:5432/postgres
+# Database (Supabase - use Transaction pooler URL, port 6543)
+DATABASE_URL=postgresql://postgres.[project-ref]:YOUR_PASSWORD@aws-0-[region].pooler.supabase.com:6543/postgres
 PAYLOAD_SECRET=generate-a-long-random-string-here
 
 # Site
@@ -277,6 +279,23 @@ jobs:
 ---
 
 ## Troubleshooting
+
+### Supabase Connection Timeout (Vercel)
+```
+Error: timeout exceeded when trying to connect
+```
+- **Cause:** Using direct Supabase connection URL instead of the pooler URL
+- **Fix:**
+  1. Go to Supabase → **Settings** → **Database** → **Connection string**
+  2. Select **Transaction** mode
+  3. Copy the URL — it should use `pooler.supabase.com` and port `6543`
+  4. Update `DATABASE_URL` in Vercel environment variables
+  5. Redeploy
+
+  ✅ Correct: `postgresql://postgres.[ref]:pass@aws-0-[region].pooler.supabase.com:6543/postgres`
+  ❌ Wrong: `postgresql://postgres:pass@db.[ref].supabase.co:5432/postgres`
+
+- **Also check:** Your Supabase project is not paused (free tier pauses after 7 days of inactivity)
 
 ### Database Connection Error
 ```

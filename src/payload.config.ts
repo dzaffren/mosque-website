@@ -24,13 +24,15 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 // Select database adapter based on environment
-const dbAdapter = process.env.NODE_ENV === 'production'
+const isProduction = process.env.NODE_ENV === 'production'
+const dbAdapter = isProduction
   ? postgresAdapter({
       pool: {
         connectionString: process.env.DATABASE_URL || '',
-        max: 1,
-        connectionTimeoutMillis: 30_000,
+        max: 3,
+        connectionTimeoutMillis: 60_000,
         idleTimeoutMillis: 30_000,
+        ssl: { rejectUnauthorized: false },
       },
     })
   : sqliteAdapter({
