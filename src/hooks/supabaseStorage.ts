@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { FilesAfterChangeHook, FilesBeforeChangeHook } from 'payload'
+import type { CollectionAfterChangeHook, CollectionBeforeDeleteHook } from 'payload'
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -15,7 +15,7 @@ const BUCKET_NAME = 'media'
 /**
  * Upload file to Supabase Storage after local save
  */
-export const uploadToSupabase: FilesAfterChangeHook = async ({
+export const uploadToSupabase: CollectionAfterChangeHook = async ({
   doc,
   operation,
   req,
@@ -45,13 +45,13 @@ export const uploadToSupabase: FilesAfterChangeHook = async ({
     } catch {
       // If file not in /tmp, try from request file data
       if (req.file?.data) {
-        fileBuffer = req.file.data
+        fileBuffer = req.file.data as Buffer
       }
     }
 
     if (fileBuffer) {
       // Upload to Supabase
-      const { error, data } = await supabase.storage
+      const { error } = await supabase.storage
         .from(BUCKET_NAME)
         .upload(storagePath, fileBuffer, {
           contentType: doc.mimeType || 'application/octet-stream',
@@ -74,7 +74,6 @@ export const uploadToSupabase: FilesAfterChangeHook = async ({
     }
   } catch (error) {
     console.error('Failed to upload to Supabase Storage:', error)
-    // Don't fail the operation
   }
 
   return doc
@@ -83,20 +82,24 @@ export const uploadToSupabase: FilesAfterChangeHook = async ({
 /**
  * Delete file from Supabase Storage before deletion
  */
-export const deleteFromSupabase: FilesBeforeChangeHook = async ({
-  doc,
-  operation,
+export const deleteFromSupabase: CollectionBeforeDeleteHook = async ({
+  req,
+  id,
 }) => {
-  // Only delete in production
-  if (!supabase || operation !== 'delete' || process.env.NODE_ENV !== 'production') {
+  if (!supabase || process.env.NODE_ENV !== 'production') {
     return
   }
 
   try {
+    const doc = await req.payload.findByID({
+      collection: 'media',
+      id,
+      req,
+    })
+
     if (!doc?.url) return
 
     // Extract path from public URL
-    // Format: https://xxx.supabase.co/storage/v1/object/public/media/2026/02/id-filename
     const urlParts = doc.url.split('/media/')
     if (urlParts.length > 1) {
       const filePath = urlParts[1]
