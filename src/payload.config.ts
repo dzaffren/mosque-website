@@ -29,6 +29,8 @@ const dbAdapter = process.env.NODE_ENV === 'production'
       pool: {
         connectionString: process.env.DATABASE_URL || '',
         max: 1,
+        connectionTimeoutMillis: 30_000,
+        idleTimeoutMillis: 30_000,
       },
     })
   : sqliteAdapter({
