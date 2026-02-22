@@ -1,7 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { CollectionAfterChangeHook, CollectionBeforeDeleteHook } from 'payload'
-import { promises as fs } from 'fs'
-import path from 'path'
+import type { CollectionBeforeChangeHook, CollectionBeforeDeleteHook } from 'payload'
 
 const supabase = process.env.SUPABASE_URL
   ? createClient(
@@ -13,81 +11,63 @@ const supabase = process.env.SUPABASE_URL
 const BUCKET_NAME = 'media'
 
 /**
- * Upload file to Supabase Storage after local save
+ * Upload file to Supabase Storage before save
  */
-export const uploadToSupabase: CollectionAfterChangeHook = async ({
-  doc,
-  operation,
+export const uploadToSupabase: CollectionBeforeChangeHook = async ({
+  data,
   req,
+  operation,
 }) => {
-  // Only upload on create in production
+  // Only upload in production on create
   if (!supabase || process.env.NODE_ENV !== 'production' || operation !== 'create') {
-    return doc
+    return data
   }
 
   try {
-    if (!doc?.filename) {
-      return doc
+    // Get file from request
+    const file = req.file
+    if (!file?.data || !file?.name) {
+      console.log('No file data found in request')
+      return data
     }
 
     // Generate unique path: year/month/filename
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')
-    const storagePath = `${year}/${month}/${doc.id}-${doc.filename}`
+    const filename = file.name
+    const storagePath = `${year}/${month}/${Date.now()}-${filename}`
 
-    // Try to read file from /tmp/media (temporary storage)
-    const tmpPath = path.join('/tmp/media', doc.filename)
-    let fileBuffer: Buffer | undefined
+    console.log('Uploading to Supabase:', storagePath)
 
-    try {
-      fileBuffer = await fs.readFile(tmpPath)
-    } catch {
-      // If file not in /tmp, try from request file data
-      if (req.file?.data) {
-        fileBuffer = req.file.data as Buffer
-      }
+    // Upload to Supabase
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(storagePath, file.data, {
+        contentType: file.mimetype || 'application/octet-stream',
+        upsert: true,
+      })
+
+    if (error) {
+      console.error('Supabase upload error:', error)
+      throw error
     }
 
-    if (fileBuffer) {
-      // Upload to Supabase
-      const { error } = await supabase.storage
-        .from(BUCKET_NAME)
-        .upload(storagePath, fileBuffer, {
-          contentType: doc.mimeType || 'application/octet-stream',
-          upsert: true,
-        })
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(storagePath)
 
-      if (error) {
-        console.error('Supabase upload error:', error)
-        throw error
-      }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(storagePath)
-
-      if (urlData?.publicUrl) {
-        // Update the document in database with the public URL
-        await req.payload.update({
-          collection: 'media',
-          id: doc.id,
-          data: {
-            url: urlData.publicUrl,
-          },
-          req,
-        })
-        
-        // Also update the returned doc object
-        doc.url = urlData.publicUrl
-      }
+    if (urlData?.publicUrl) {
+      console.log('File uploaded successfully:', urlData.publicUrl)
+      // Override the URL in the data before it's saved
+      data.url = urlData.publicUrl
     }
   } catch (error) {
     console.error('Failed to upload to Supabase Storage:', error)
   }
 
-  return doc
+  return data
 }
 
 /**

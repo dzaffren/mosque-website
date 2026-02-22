@@ -58,7 +58,7 @@ export const Media: CollectionConfig = {
     }),
   },
   hooks: {
-    afterChange: [uploadToSupabase],
+    beforeChange: [uploadToSupabase],
     beforeDelete: [deleteFromSupabase],
   },
 }
