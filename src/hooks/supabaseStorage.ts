@@ -69,6 +69,17 @@ export const uploadToSupabase: CollectionAfterChangeHook = async ({
         .getPublicUrl(storagePath)
 
       if (urlData?.publicUrl) {
+        // Update the document in database with the public URL
+        await req.payload.update({
+          collection: 'media',
+          id: doc.id,
+          data: {
+            url: urlData.publicUrl,
+          },
+          req,
+        })
+        
+        // Also update the returned doc object
         doc.url = urlData.publicUrl
       }
     }

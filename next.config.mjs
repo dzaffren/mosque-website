@@ -7,6 +7,15 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 const nextConfig = {
   // Use standalone output for Docker builds, skip for Vercel
   ...(process.env.STANDALONE === 'true' && { output: 'standalone' }),
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],
