@@ -51,13 +51,34 @@ ALTER TABLE "mosque_settings" ADD COLUMN "logo_shape" "enum_mosque_settings_logo
 
 CREATE TYPE "public"."enum_media_purpose" AS ENUM('logo', 'gallery', 'event', 'staff', 'other');
 ALTER TABLE "media" ADD COLUMN "purpose" "enum_media_purpose" DEFAULT 'other';
+
+-- Add image sizes columns to media (thumbnail and card)
+ALTER TABLE "media" ADD COLUMN "sizes_thumbnail_url" varchar;
+ALTER TABLE "media" ADD COLUMN "sizes_thumbnail_width" numeric;
+ALTER TABLE "media" ADD COLUMN "sizes_thumbnail_height" numeric;
+ALTER TABLE "media" ADD COLUMN "sizes_thumbnail_mime_type" varchar;
+ALTER TABLE "media" ADD COLUMN "sizes_thumbnail_filesize" numeric;
+ALTER TABLE "media" ADD COLUMN "sizes_thumbnail_filename" varchar;
+
+ALTER TABLE "media" ADD COLUMN "sizes_card_url" varchar;
+ALTER TABLE "media" ADD COLUMN "sizes_card_width" numeric;
+ALTER TABLE "media" ADD COLUMN "sizes_card_height" numeric;
+ALTER TABLE "media" ADD COLUMN "sizes_card_mime_type" varchar;
+ALTER TABLE "media" ADD COLUMN "sizes_card_filesize" numeric;
+ALTER TABLE "media" ADD COLUMN "sizes_card_filename" varchar;
 ```
 
 ## What the Migration Does
 
-Adds two new columns:
-- `mosque_settings.logo_shape` - Controls circular vs square logo display
-- `media.purpose` - Categorizes uploaded images (logo, gallery, event, etc.)
+Adds new columns to support logo upload improvements:
+
+**mosque_settings table:**
+- `logo_shape` - Enum controlling circular vs square logo display (default: square)
+
+**media table:**
+- `purpose` - Categorizes uploaded images (logo, gallery, event, staff, other)
+- `sizes_thumbnail_*` - Thumbnail image variant (400x400px) with URL, dimensions, MIME type, filesize, filename
+- `sizes_card_*` - Card image variant (768x768px) with URL, dimensions, MIME type, filesize, filename
 
 ## Verify Migration Success
 
