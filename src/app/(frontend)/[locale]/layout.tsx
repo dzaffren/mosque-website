@@ -57,6 +57,7 @@ export default async function LocaleLayout({
   const whatsappGroupUrl = (settings.whatsappGroupUrl as string | undefined) || ''
   const mosqueName = (settings.name as string | undefined) || 'Masjid Al-Iman'
   const logo = settings.logo && typeof settings.logo === 'object' ? settings.logo : null
+  // Backward compatible: default to square if logoShape field doesn't exist yet
   const logoShape = (settings.logoShape as 'square' | 'circle' | undefined) || 'square'
 
   return (
