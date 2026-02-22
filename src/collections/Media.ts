@@ -38,21 +38,23 @@ export const Media: CollectionConfig = {
   upload: {
     disableLocalStorage: isProduction,
     mimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'],
-    imageSizes: [
-      {
-        name: 'thumbnail',
-        width: 400,
-        height: 400,
-        position: 'centre',
-      },
-      {
-        name: 'card',
-        width: 768,
-        height: 768,
-        position: 'centre',
-      },
-    ],
-    adminThumbnail: 'thumbnail',
+    // Temporarily disabled imageSizes until database migration runs
+    // TODO: Re-enable after DATABASE_URL is fixed and migration runs successfully
+    // imageSizes: [
+    //   {
+    //     name: 'thumbnail',
+    //     width: 400,
+    //     height: 400,
+    //     position: 'centre',
+    //   },
+    //   {
+    //     name: 'card',
+    //     width: 768,
+    //     height: 768,
+    //     position: 'centre',
+    //   },
+    // ],
+    // adminThumbnail: 'thumbnail',
     ...(!isProduction && {
       staticDir: path.resolve(dirname, '../../media'),
     }),
