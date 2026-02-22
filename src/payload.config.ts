@@ -50,6 +50,7 @@ const plugins = isProduction && process.env.S3_ENDPOINT
           media: true,
         },
         bucket: process.env.S3_BUCKET || 'media',
+        acl: 'public-read',
         config: {
           credentials: {
             accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
