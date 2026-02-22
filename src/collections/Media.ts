@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { uploadToSupabase, deleteFromSupabase } from '../hooks/supabaseStorage'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -36,7 +35,6 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
-    disableLocalStorage: isProduction,
     mimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'],
     imageSizes: [
       {
@@ -56,9 +54,5 @@ export const Media: CollectionConfig = {
     ...(!isProduction && {
       staticDir: path.resolve(dirname, '../../media'),
     }),
-  },
-  hooks: {
-    beforeChange: [uploadToSupabase],
-    beforeDelete: [deleteFromSupabase],
   },
 }
